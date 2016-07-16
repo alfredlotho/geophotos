@@ -28,4 +28,34 @@ class Place
     @location = Point.new(params[:geometry][:geolocation])
   end
 
+  def self.find_by_short_name short_name
+    collection.find("address_components.short_name" => short_name)
+  end
+
+  def self.to_places view
+    places = []
+    view.each do |place|
+      places << Place.new(place)
+    end
+    return places
+  end
+
+  def self.find id
+    place = collection.find(:_id => BSON::ObjectId.from_string(id)).first
+    Place.new(place) if !place.nil?
+  end
+
+  def self.all(offset=0, limit=nil)
+    result = collection.find.skip(offset)
+    result = result.limit(limit) if !limit.nil?
+    places = []
+    result.each do |place|
+      places << Place.new(place)
+    end
+    return places
+  end
+
+  def destroy
+    Place.collection.find(:_id => BSON::ObjectId.from_string(@id)).delete_one
+  end
 end
