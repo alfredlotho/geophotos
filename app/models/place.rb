@@ -71,4 +71,15 @@ class Place
     collection.aggregate(agg)
   end
 
+  # returns a distinct collection of country names
+  def self.get_country_names
+    collection.aggregate([
+      {"$project" => {"address_components.long_name" => 1, "address_components.types" => 1}},
+      {"$unwind" => "$address_components"},
+      {"$unwind" => "$address_components.long_name"},
+      {"$unwind" => "$address_components.types"},
+      {"$match" => {"address_components.types" => "country"}},
+      {"$group" => {"_id" => "$address_components.long_name"}}
+    ]).to_a.map {|h| h[:_id]}
+  end
 end
