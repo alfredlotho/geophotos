@@ -58,4 +58,17 @@ class Place
   def destroy
     Place.collection.find(:_id => BSON::ObjectId.from_string(@id)).delete_one
   end
+
+  # returns a list of AddressComponents and their related id, formatted address and geolocation
+  def self.get_address_components(sort={}, offset=0, limit=nil)
+    agg = [
+      {"$project" => {"_id" => 1, "address_components" => 1, "formatted_address" => 1, "geometry.geolocation" => 1}},
+      {"$unwind" => "$address_components"}
+    ]
+    agg << {"$sort" => sort} if !sort.empty?
+    agg << {"$skip" => offset}
+    agg << {"$limit" => limit} if !limit.nil?
+    collection.aggregate(agg)
+  end
+
 end
