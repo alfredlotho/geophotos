@@ -82,4 +82,12 @@ class Place
       {"$group" => {"_id" => "$address_components.long_name"}}
     ]).to_a.map {|h| h[:_id]}
   end
+
+  # return id of each document in the collection with short name equal to the parameter and has type of country
+  def self.find_ids_by_country_code country_code
+    collection.aggregate([
+      {"$match" => {"address_components.types" => "country", "address_components.short_name" => country_code}},
+      {"$project" => {"_id" => 1}}
+    ]).to_a.map {|doc| doc[:_id].to_s}   
+  end
 end
