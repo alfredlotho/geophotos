@@ -4,9 +4,9 @@ class Place
   attr_accessor :id, :formatted_address, :location, :address_components
 
   def persisted?
-  !@id.nil?
+    !@id.nil?
   end
-  
+
   def self.mongo_client
    Mongoid::Clients.default
   end
@@ -81,7 +81,6 @@ class Place
     collection.aggregate([
       {"$project" => {"address_components.long_name" => 1, "address_components.types" => 1}},
       {"$unwind" => "$address_components"},
-      {"$unwind" => "$address_components.long_name"},
       {"$unwind" => "$address_components.types"},
       {"$match" => {"address_components.types" => "country"}},
       {"$group" => {"_id" => "$address_components.long_name"}}
