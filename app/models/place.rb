@@ -23,7 +23,7 @@ class Place
     @address_components = []
     params[:address_components].each do |ac|
       @address_components << AddressComponent.new(ac)
-    end
+    end if !params[:address_components].nil?
     @formatted_address = params[:formatted_address]
     @location = Point.new(params[:geometry][:geolocation])
   end
@@ -99,11 +99,16 @@ class Place
     collection.indexes.drop_one("geometry.geolocation_2dsphere")
   end
 
+  # returns places that are closest to the provided Point
   def self.near(point, max_meters = nil)
     near_query = Hash.new
     near_query[:$geometry] = point.to_hash
     near_query[:$maxDistance] = max_meters if !max_meters.nil?
     collection.find("geometry.geolocation" => {:$near => near_query})
+  end
+
+  def near(max_meters = nil)
+    Place.to_places(Place.near(@location.to_hash, max_meters))
   end
 
 end
