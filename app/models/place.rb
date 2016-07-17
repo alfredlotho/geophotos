@@ -1,7 +1,12 @@
 class Place
+  include ActiveModel::Model
 
   attr_accessor :id, :formatted_address, :location, :address_components
 
+  def persisted?
+  !@id.nil?
+  end
+  
   def self.mongo_client
    Mongoid::Clients.default
   end
