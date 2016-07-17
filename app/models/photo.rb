@@ -11,6 +11,7 @@ class Photo
     if !doc.nil?
       @id = doc[:_id].to_s
       @location = Point.new(doc[:metadata][:location])
+      @place = doc[:metadata][:place]
     end
   end
 
@@ -21,7 +22,7 @@ class Photo
   # stores a new instance of Photo to GridFS
   def save
     if persisted?
-      #do nothing for now
+      self.class.mongo_client.database.fs.find(id_criteria).update_one(:metadata => {:location => @location.to_hash, :place => @place})
     else
       gps = EXIFR::JPEG.new(@contents).gps
       @location = Point.new(:lng => gps.longitude, :lat => gps.latitude)
@@ -29,6 +30,7 @@ class Photo
       description[:content_type] = "image/jpeg"
       description[:metadata] = {}
       description[:metadata][:location] = @location.to_hash
+      description[:metadata][:place] = @place
       @contents.rewind
       grid_file = Mongo::Grid::File.new(@contents.read, description)
       id = self.class.mongo_client.database.fs.insert_one(grid_file)
@@ -73,6 +75,29 @@ class Photo
 
   def destroy
     self.class.mongo_client.database.fs.find(id_criteria).delete_one
+  end
+
+  def find_nearest_place_id(max_meters)
+    Place.near(@location, max_meters).limit(1).projection(:_id => 1).first[:_id]
+  end
+
+  def place
+    return Place.find(@place.to_s) if !@place.nil?
+  end
+
+  def place=(place)
+    if place.is_a?(String)
+      @place = BSON::ObjectId.from_string(place)
+    elsif place.is_a?(Place)
+      @place = BSON::ObjectId.from_string(place.id)
+    elsif place.is_a?(BSON::ObjectId)
+      @place = place
+    end    
+  end
+
+  def self.find_photos_for_place place_id
+    place = BSON::ObjectId.from_string(place_id.to_s)
+    mongo_client.database.fs.find("metadata.place" => place)
   end
 
 end

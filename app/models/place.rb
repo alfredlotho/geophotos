@@ -110,5 +110,5 @@ class Place
   def near(max_meters = nil)
     Place.to_places(Place.near(@location.to_hash, max_meters))
   end
-
+  
 end
